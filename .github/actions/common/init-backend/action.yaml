@@ -44,9 +44,9 @@ runs:
       shell: bash
       run: |
         echo "Current directory:"
-        sh "pwd"
+        pwd
         echo "Workspace: ${{ github.workspace }}"
-        sh "ls -la ${{ github.workspace }}"
+        ls -la ${{ github.workspace }}
         echo "Gradle cache not found. Resolving dependencies..."
-        sh "chmod +x gradlew && ./gradlew clean build --refresh-dependencies"
+        chmod +x gradlew && ./gradlew clean build --refresh-dependencies
       working-directory: ${{ github.workspace }}
