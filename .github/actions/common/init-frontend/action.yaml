@@ -1,0 +1,59 @@
+name: Setup Node & pnpm with Cache
+
+description: Installs nodejs,pnpm,jdk,gradle and restores pnpm store cache
+
+inputs:
+  nodejs:
+    description: 'Node.js version'
+    required: true
+
+  pnpm:
+    description: 'pnpm version'
+    required: true
+
+  jdk:
+    description: 'jdk version'
+    required: true
+
+  gradle:
+    description: 'gradle version'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: "${{ inputs.pnpm }}"
+        run_install: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "${{ inputs.nodejs }}"
+
+    - name: Set up Amazon Corretto JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: "${{ inputs.jdk }}"
+        distribution: 'corretto'
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: "${{ inputs.gradle }}"
+
+    - name: Get pnpm store path
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+    - name: Restore pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
