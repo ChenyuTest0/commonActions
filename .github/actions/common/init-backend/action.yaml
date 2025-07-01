@@ -43,7 +43,8 @@ runs:
       if: steps.gradle-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        echo "Current directory: $(pwd)"
+        echo "Current directory:"
+        sh "pwd"
         echo "Workspace: ${{ github.workspace }}"
         sh "ls -la ${{ github.workspace }}"
         echo "Gradle cache not found. Resolving dependencies..."
