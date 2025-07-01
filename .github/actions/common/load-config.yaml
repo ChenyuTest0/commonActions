@@ -1,0 +1,31 @@
+name: Load Config Action
+
+description: Reads a YAML config file and outputs its contents.
+
+inputs:
+  config_file:
+    description: 'Path to the YAML configuration file'
+    required: true
+
+outputs:
+  github_output:
+    description: 'All YAML content serialized as JSON string'
+    value: ${{ steps.read_yaml.outputs.github_output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install yq
+      shell: bash
+      run: |
+        YQ_VERSION="v4.45.4"
+        sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/local/bin/yq
+        sudo chmod +x /usr/local/bin/yq
+        yq --version
+      
+    - name: Parse YAML
+      id: read_yaml
+      shell: bash
+      run: |
+        config_json=$(yq -o=json '.' "${{ inputs.config_file }}" | jq -c .)
+        echo "github_output=$config_json" >> $GITHUB_OUTPUT
