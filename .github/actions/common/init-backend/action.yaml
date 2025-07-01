@@ -44,4 +44,5 @@ runs:
       shell: bash
       run: |
         echo "Gradle cache not found. Resolving dependencies..."
-        sudo ./gradlew build --dry-run
+        sh "chmod +x gradlew && ./gradlew clean build --refresh-dependencies"
+
