@@ -1,1 +1,48 @@
-name: 
+name: Setup jdk, gradle with gradle Cache
+
+description: Installs jdk, gradle and restores gradle store cache
+
+inputs:
+  jdk:
+    description: 'jdk version'
+    required: true
+
+  gradle:
+    description: 'gradle version'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Amazon Corretto JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: "${{ inputs.jdk }}"
+        distribution: 'corretto'
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: "${{ inputs.gradle }}"
+
+    - name: Get gradle cache path
+      id: gradle-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=${GRADLE_USER_HOME:-$HOME/.gradle}" >> $GITHUB_OUTPUT
+
+
+    - name: Check for Gradle cache key
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.gradle-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Resolve Gradle dependencies
+      if: steps.gradle-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "Gradle cache not found. Resolving dependencies..."
+        ./gradlew build --dry-run
