@@ -56,13 +56,18 @@ jobs:
         continue-on-error: true
 
       - name: Summarize Results
+        shell: bash
         run: |
           # set default value for test
           SONARQUBE_RESULT=${SONARQUBE_RESULT:-OK}
+          ESLINT_FAILED=${ESLINT_FAILED:-false}
+          STYLELINT_FAILED=${STYLELINT_FAILED:-false}
+          PRETTIER_FAILED=${PRETTIER_FAILED:-false}
+          
           echo "SonarQube: $SONARQUBE_RESULT"
-          echo "ESLint Failed: ${{ env.ESLINT_FAILED }}"
-          echo "StyleLint Failed: ${{ env.STYLELINT_FAILED }}"
-          echo "Prettier Failed: ${{ env.PRETTIER_FAILED }}"
+          echo "ESLint Failed: $ESLINT_FAILED"
+          echo "StyleLint Failed: $STYLELINT_FAILED"
+          echo "Prettier Failed: $PRETTIER_FAILED"
 
           if [[ "$SONARQUBE_RESULT" != "OK" || "$ESLINT_FAILED" == "true" || "$STYLELINT_FAILED" == "true" || "$PRETTIER_FAILED" == "true" ]]; then
             echo "process_result=FAILED" >> $GITHUB_ENV
