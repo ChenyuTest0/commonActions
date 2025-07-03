@@ -1,9 +1,9 @@
 name: Frontend Code quality Analysis
 
-jobs:
-  run_action:
-    runs-on: ubuntu-latest 
+description: executing SonarQube code analysis for frontend
 
+runs:
+  using: "composite"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
