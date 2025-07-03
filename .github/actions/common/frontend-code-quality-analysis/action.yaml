@@ -4,74 +4,74 @@ description: executing SonarQube code analysis for frontend
 
 runs:
   using: "composite"
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-      # temperary comment out for test
-      # - name: Retrieve SONAR_TOKEN and SONAR_HOST_URL from AWS Secrets Manager
-      #   id: secrets
-      #   run: |
-      #     export SONAR_TOKEN=$(aws secretsmanager get-secret-value --secret-id sonar/token --query SecretString --output text)
-      #     export SONAR_HOST_URL=$(aws secretsmanager get-secret-value --secret-id sonar/host-url --query SecretString --output text)
-      #     echo "SONAR_TOKEN=$SONAR_TOKEN" >> $GITHUB_ENV
-      #     echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> $GITHUB_ENV
+  steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+    # temperary comment out for test
+    # - name: Retrieve SONAR_TOKEN and SONAR_HOST_URL from AWS Secrets Manager
+    #   id: secrets
+    #   run: |
+    #     export SONAR_TOKEN=$(aws secretsmanager get-secret-value --secret-id sonar/token --query SecretString --output text)
+    #     export SONAR_HOST_URL=$(aws secretsmanager get-secret-value --secret-id sonar/host-url --query SecretString --output text)
+    #     echo "SONAR_TOKEN=$SONAR_TOKEN" >> $GITHUB_ENV
+    #     echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> $GITHUB_ENV
 
-      - name: Run SonarQube analysis
-        if: env.SONAR_TOKEN && env.SONAR_HOST_URL
-        run: |
-          echo "Running SonarQube Analysis..."
-          npx sonar-scanner \
-            -Dsonar.projectKey=my-frontend-project \
-            -Dsonar.sources=src \
-            -Dsonar.host.url=$SONAR_HOST_URL \
-            -Dsonar.login=$SONAR_TOKEN \
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+    - name: Run SonarQube analysis
+      if: env.SONAR_TOKEN && env.SONAR_HOST_URL
+      run: |
+        echo "Running SonarQube Analysis..."
+        npx sonar-scanner \
+          -Dsonar.projectKey=my-frontend-project \
+          -Dsonar.sources=src \
+          -Dsonar.host.url=$SONAR_HOST_URL \
+          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
-      - name: Get Quality Gate result
-        if: env.SONAR_TOKEN && env.SONAR_HOST_URL
-        run: |
-          echo "Getting SonarQube Quality Gate result..."
-          sleep 10  # wait for analysis result
-          curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=my-frontend-project" > qualitygate.json
-          export STATUS=$(jq -r .projectStatus.status qualitygate.json)
-          echo "Quality Gate status: $STATUS"
-          echo "process_result=$STATUS" >> $GITHUB_ENV
+    - name: Get Quality Gate result
+      if: env.SONAR_TOKEN && env.SONAR_HOST_URL
+      run: |
+        echo "Getting SonarQube Quality Gate result..."
+        sleep 10  # wait for analysis result
+        curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=my-frontend-project" > qualitygate.json
+        export STATUS=$(jq -r .projectStatus.status qualitygate.json)
+        echo "Quality Gate status: $STATUS"
+        echo "process_result=$STATUS" >> $GITHUB_ENV
 
-      - name: Run ESLint
-        id: eslint
-        run: |
-          npx eslint src || echo "ESLINT_FAILED=true" >> $GITHUB_ENV
-        continue-on-error: true
+    - name: Run ESLint
+      id: eslint
+      run: |
+        npx eslint src || echo "ESLINT_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
 
-      - name: Run StyleLint
-        id: stylelint
-        run: |
-          npx stylelint "src/**/*.{css,scss,js,jsx,ts,tsx}" || echo "STYLELINT_FAILED=true" >> $GITHUB_ENV
-        continue-on-error: true
+    - name: Run StyleLint
+      id: stylelint
+      run: |
+        npx stylelint "src/**/*.{css,scss,js,jsx,ts,tsx}" || echo "STYLELINT_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
 
-      - name: Run Prettier Check
-        id: prettier
-        run: |
-          npx prettier --check . || echo "PRETTIER_FAILED=true" >> $GITHUB_ENV
-        continue-on-error: true
+    - name: Run Prettier Check
+      id: prettier
+      run: |
+        npx prettier --check . || echo "PRETTIER_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
 
-      - name: Summarize Results
-        shell: bash
-        run: |
-          # set default value for test
-          SONARQUBE_RESULT=${SONARQUBE_RESULT:-OK}
-          ESLINT_FAILED=${ESLINT_FAILED:-false}
-          STYLELINT_FAILED=${STYLELINT_FAILED:-false}
-          PRETTIER_FAILED=${PRETTIER_FAILED:-false}
-          
-          echo "SonarQube: $SONARQUBE_RESULT"
-          echo "ESLint Failed: $ESLINT_FAILED"
-          echo "StyleLint Failed: $STYLELINT_FAILED"
-          echo "Prettier Failed: $PRETTIER_FAILED"
+    - name: Summarize Results
+      shell: bash
+      run: |
+        # set default value for test
+        SONARQUBE_RESULT=${SONARQUBE_RESULT:-OK}
+        ESLINT_FAILED=${ESLINT_FAILED:-false}
+        STYLELINT_FAILED=${STYLELINT_FAILED:-false}
+        PRETTIER_FAILED=${PRETTIER_FAILED:-false}
+        
+        echo "SonarQube: $SONARQUBE_RESULT"
+        echo "ESLint Failed: $ESLINT_FAILED"
+        echo "StyleLint Failed: $STYLELINT_FAILED"
+        echo "Prettier Failed: $PRETTIER_FAILED"
 
-          if [[ "$SONARQUBE_RESULT" != "OK" || "$ESLINT_FAILED" == "true" || "$STYLELINT_FAILED" == "true" || "$PRETTIER_FAILED" == "true" ]]; then
-            echo "process_result=FAILED" >> $GITHUB_ENV
-            exit 1
-          else
-            echo "process_result=PASSED" >> $GITHUB_ENV
-          fi
+        if [[ "$SONARQUBE_RESULT" != "OK" || "$ESLINT_FAILED" == "true" || "$STYLELINT_FAILED" == "true" || "$PRETTIER_FAILED" == "true" ]]; then
+          echo "process_result=FAILED" >> $GITHUB_ENV
+          exit 1
+        else
+          echo "process_result=PASSED" >> $GITHUB_ENV
+        fi
